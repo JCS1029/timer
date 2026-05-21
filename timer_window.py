@@ -6,54 +6,77 @@ POPUP_COUNT = 0
 
 class TimerWindow:
     def __init__(self):
-        self.root = tk.Tk()
+        self.master = tk.Tk()
+        self.master.title("Timer")
+        self.master.attributes("-alpha", 0.0)
+
+        self.root = tk.Toplevel(self.master)
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
-        x = int(0.5 * res_width - 150)
-        y = int(0.5 * res_height - 100)
-        self.root.title("Timer")
-        self.root.geometry(f"300x200+{x}+{y}")
-        self.root.configure(bg="gray")
-        self.style = Style(theme="darkly")
-        self.style.theme_use()
+        x = int(res_width - 300)
+        y = int(res_height - 250)
+        self.root.geometry(f"250x200+{x}-{y}")
+        self.style = Style(theme="cyborg")
+        #self.style.theme_use()
 
-        self.style.configure('Link.TButton', font=('Arial', 20))
+        self.style.configure('Link.TButton', font=('Arial', 12))
+        self.style.configure('Action.TButton', font=('Arial', 8), background="black")
+        self.root.overrideredirect(True)
+        self.root.attributes("-topmost", True)
+
+        self.master.bind("<Unmap>", lambda e: self.root.withdraw())   # Hide child if master minimizes
+        self.master.bind("<Map>", lambda e: self.root.deiconify())
+
+        self.control_panel = ttk.Frame(self.root)
+        self.control_panel.pack(anchor="ne", padx=1, pady=1)
+
+        self.close_button = ttk.Button(self.control_panel, text="X", command=self.exit_app, bootstyle="danger-link")
+        self.close_button.pack(side="right", padx=1)
+
+        self.minimize_button = ttk.Button(self.control_panel, text="-", command=self.min_app, bootstyle="link")
+        self.minimize_button.pack(side="right", padx=5)
 
         self.time_frame = ttk.Frame(self.root)
-        self.time_frame.pack(pady=40)
+        self.time_frame.pack(pady=24)
 
         self.button_frame = ttk.Frame(self.root)
         self.button_frame.pack(pady=0)
 
         self.hours_button = ttk.Button(self.time_frame, text="00", command=self.select_hours, bootstyle="link")
-        self.hours_button.pack(side="left", padx=10)
+        self.hours_button.pack(side="left", padx=3)
 
-        self.first_colon_label = ttk.Label(self.time_frame, text=":", font=("Arial", 20))
+        self.first_colon_label = ttk.Label(self.time_frame, text=":", font=("Arial", 12))
         self.first_colon_label.pack(side="left", padx=1)
 
         self.minutes_button = ttk.Button(self.time_frame, text="00", command=self.select_minutes, bootstyle="link")
-        self.minutes_button.pack(side="left", padx=10)
+        self.minutes_button.pack(side="left", padx=3)
 
-        self.second_colon_label = ttk.Label(self.time_frame, text=":", font=("Arial", 20))
+        self.second_colon_label = ttk.Label(self.time_frame, text=":", font=("Arial", 12))
         self.second_colon_label.pack(side="left", padx=1)
 
         self.seconds_button = ttk.Button(self.time_frame, text="00", command=self.select_seconds, bootstyle="link")
-        self.seconds_button.pack(side="left", padx=10)
+        self.seconds_button.pack(side="left", padx=3)
 
-        self.start_button = ttk.Button(self.button_frame, text="Start", command=self.start_timer)
-        self.start_button.pack(side="left", padx=10)
+        self.start_button = ttk.Button(self.button_frame, text="Start", command=self.start_timer, style="Action.TButton")
+        self.start_button.pack(side="left", padx=3)
 
-        self.stop_button = ttk.Button(self.button_frame, text="Stop", command=self.stop_timer)
-        self.stop_button.pack(side="left", padx=10)
+        self.stop_button = ttk.Button(self.button_frame, text="Stop", command=self.stop_timer, style="Action.TButton")
+        self.stop_button.pack(side="left", padx=3)
 
-        self.reset_button = ttk.Button(self.button_frame, text="Reset", command=self.reset_timer)
-        self.reset_button.pack(side="left", padx=10)
+        self.reset_button = ttk.Button(self.button_frame, text="Reset", command=self.reset_timer, style="Action.TButton")
+        self.reset_button.pack(side="left", padx=3)
 
         self.hours_var = tk.StringVar(value="00")
         self.minutes_var = tk.StringVar(value="00")
         self.seconds_var = tk.StringVar(value="00")
 
         self._picker = None
+
+    def exit_app(self):
+        self.master.destroy()
+
+    def min_app(self):
+        self.master.iconify()
 
     def show_picker(self, button, values, on_select):
         global POPUP_COUNT
