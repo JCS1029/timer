@@ -13,14 +13,14 @@ class TimerWindow:
         self.root = tk.Toplevel(self.master)
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
-        x = int(res_width - 300)
-        y = int(res_height - 250)
-        self.root.geometry(f"250x200+{x}-{y}")
+        x = int(res_width - 180)
+        y = int(res_height - 220)
+        self.root.geometry(f"150x150+{x}-{y}")
         self.style = Style(theme="cyborg")
         #self.style.theme_use()
 
         self.style.configure('Link.TButton', font=('Arial', 12))
-        self.style.configure('Action.TButton', font=('Arial', 8), background="black")
+        self.style.configure('Action.TButton', font=('Arial', 8), background="black", borderwidth=0)
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
 
@@ -33,38 +33,38 @@ class TimerWindow:
         self.close_button = ttk.Button(self.control_panel, text="X", command=self.exit_app, bootstyle="danger-link")
         self.close_button.pack(side="right", padx=1)
 
-        self.minimize_button = ttk.Button(self.control_panel, text="-", command=self.min_app, bootstyle="link")
+        self.minimize_button = ttk.Button(self.control_panel, text="—", command=self.min_app, bootstyle="link")
         self.minimize_button.pack(side="right", padx=5)
 
         self.time_frame = ttk.Frame(self.root)
-        self.time_frame.pack(pady=24)
+        self.time_frame.pack(pady=14)
 
         self.button_frame = ttk.Frame(self.root)
         self.button_frame.pack(pady=0)
 
         self.hours_button = ttk.Button(self.time_frame, text="00", command=self.select_hours, bootstyle="link")
-        self.hours_button.pack(side="left", padx=3)
+        self.hours_button.pack(side="left", padx=0)
 
         self.first_colon_label = ttk.Label(self.time_frame, text=":", font=("Arial", 12))
-        self.first_colon_label.pack(side="left", padx=1)
+        self.first_colon_label.pack(side="left", padx=0)
 
         self.minutes_button = ttk.Button(self.time_frame, text="00", command=self.select_minutes, bootstyle="link")
-        self.minutes_button.pack(side="left", padx=3)
+        self.minutes_button.pack(side="left", padx=0)
 
         self.second_colon_label = ttk.Label(self.time_frame, text=":", font=("Arial", 12))
-        self.second_colon_label.pack(side="left", padx=1)
+        self.second_colon_label.pack(side="left", padx=0)
 
         self.seconds_button = ttk.Button(self.time_frame, text="00", command=self.select_seconds, bootstyle="link")
-        self.seconds_button.pack(side="left", padx=3)
+        self.seconds_button.pack(side="left", padx=0)
 
         self.start_button = ttk.Button(self.button_frame, text="Start", command=self.start_timer, style="Action.TButton")
-        self.start_button.pack(side="left", padx=3)
+        self.start_button.pack(side="left", padx=0)
 
         self.stop_button = ttk.Button(self.button_frame, text="Stop", command=self.stop_timer, style="Action.TButton")
-        self.stop_button.pack(side="left", padx=3)
+        self.stop_button.pack(side="left", padx=0)
 
         self.reset_button = ttk.Button(self.button_frame, text="Reset", command=self.reset_timer, style="Action.TButton")
-        self.reset_button.pack(side="left", padx=3)
+        self.reset_button.pack(side="left", padx=0)
 
         self.hours_var = tk.StringVar(value="00")
         self.minutes_var = tk.StringVar(value="00")
@@ -90,6 +90,7 @@ class TimerWindow:
         #popup.withdraw()
         #popup.transient(self.root)
         popup.overrideredirect(True)
+        popup.attributes("-topmost", True)
 
         x = button.winfo_rootx()
         y = button.winfo_rooty() + button.winfo_height()
