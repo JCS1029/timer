@@ -14,8 +14,8 @@ class TimerWindow:
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
         x = int(res_width - 180)
-        y = int(res_height - 220)
-        self.root.geometry(f"150x150+{x}-{y}")
+        y = int(res_height - 180)
+        self.root.geometry(f"150x150+{x}+{y}")
         self.style = Style(theme="cyborg")
         #self.style.theme_use()
 
