@@ -5,11 +5,12 @@ from ttkbootstrap import Style
 POPUP_COUNT = 0
 
 class TimerWindow:
-    def __init__(self):
-        self.master = tk.Tk()
-        self.master.title("Timer")
-        self.master.attributes("-alpha", 0.0)
+    def __init__(self, master):
+        #self.master = tk.Tk()
+        #self.master.title("Timer")
+        #self.master.attributes("-alpha", 0.0)
 
+        self.master = master
         self.root = tk.Toplevel(self.master)
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
@@ -24,8 +25,10 @@ class TimerWindow:
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
 
-        self.master.bind("<Unmap>", lambda e: self.root.withdraw())   # Hide child if master minimizes
-        self.master.bind("<Map>", lambda e: self.root.deiconify())
+        #self.master.bind("<Unmap>", lambda e: self.root.withdraw())   # Hide child if master minimizes
+        self.root.bind("<Map>", lambda e: self.root.after_idle(
+            lambda: self.root.winfo_exists() and self.root.overrideredirect(True)
+        ))
 
         self.control_panel = ttk.Frame(self.root)
         self.control_panel.pack(anchor="ne", padx=1, pady=1)
@@ -35,6 +38,9 @@ class TimerWindow:
 
         self.minimize_button = ttk.Button(self.control_panel, text="—", command=self.min_app, bootstyle="link")
         self.minimize_button.pack(side="right", padx=5)
+
+        self.redirectToHomeButton = ttk.Button(self.control_panel, text="Home Window", command=self.redirect_to_home_button, bootstyle="link")
+        self.redirectToHomeButton.pack(side="right", padx=2)
 
         self.time_frame = ttk.Frame(self.root)
         self.time_frame.pack(pady=14)
@@ -72,11 +78,30 @@ class TimerWindow:
 
         self._picker = None
 
+    def redirect_to_home_button(self):
+        self.master.deiconify()
+        self.alpha_val = 1
+        self.root.attributes("-alpha", self.alpha_val)
+        
+        self.update_alpha()
+
+    def update_alpha(self):
+        if self.alpha_val <= 0:
+            self.root.withdraw()
+            return
+
+        if self.alpha_val > 0:
+            self.alpha_val -= 0.1
+            self.root.attributes("-alpha", self.alpha_val)
+            self.root.after(5, self.update_alpha)
+
+
     def exit_app(self):
         self.master.destroy()
 
     def min_app(self):
-        self.master.iconify()
+        self.root.overrideredirect(False)
+        self.root.iconify()
 
     def show_picker(self, button, values, on_select):
         global POPUP_COUNT
@@ -105,6 +130,7 @@ class TimerWindow:
         
         listbox = tk.Listbox(frame, height=10, width=5, yscrollcommand=scrollbar.set)
         listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.configure(command=listbox.yview)
 
         for value in values:
             listbox.insert("end", value)
