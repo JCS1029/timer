@@ -14,21 +14,21 @@ class TimerWindow:
         self.root = tk.Toplevel(self.master)
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
-        x = int(res_width - 180)
-        y = int(res_height - 220)
-        self.root.geometry(f"150x150+{x}+{y}")
+        x = int(res_width - 210)
+        y = int(res_height - 250)
+        self.root.geometry(f"180x180+{x}+{y}")
         self.style = Style(theme="cyborg")
         #self.style.theme_use()
 
         self.style.configure('Link.TButton', font=('Arial', 12))
         self.style.configure('Action.TButton', font=('Arial', 8), background="black", borderwidth=0)
-        self.root.overrideredirect(True)
+        #self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
 
         #self.master.bind("<Unmap>", lambda e: self.root.withdraw())   # Hide child if master minimizes
-        self.root.bind("<Map>", lambda e: self.root.after_idle(
-            lambda: self.root.winfo_exists() and self.root.overrideredirect(True)
-        ))
+        #self.root.bind("<Map>", lambda e: self.root.after_idle(
+            #lambda: self.root.winfo_exists() and self.root.overrideredirect(True)
+        #))
 
         self.control_panel = ttk.Frame(self.root)
         self.control_panel.pack(anchor="ne", padx=1, pady=1)
@@ -39,8 +39,8 @@ class TimerWindow:
         self.minimize_button = ttk.Button(self.control_panel, text="—", command=self.min_app, bootstyle="link")
         self.minimize_button.pack(side="right", padx=5)
 
-        self.redirectToHomeButton = ttk.Button(self.control_panel, text="Home Window", command=self.redirect_to_home_button, bootstyle="link")
-        self.redirectToHomeButton.pack(side="right", padx=2)
+        #self.redirectToHomeButton = ttk.Button(self.control_panel, text="Home Window", command=self.redirect_to_home_button, bootstyle="Action.TButton")
+        #self.redirectToHomeButton.pack(side="right", padx=2)
 
         self.time_frame = ttk.Frame(self.root)
         self.time_frame.pack(pady=14)
