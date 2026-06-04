@@ -1,6 +1,22 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap import Style
+import ctypes as ct
+
+
+def dark_title_bar(window):
+    """
+    MORE INFO:
+    https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
+    """
+    window.update()
+    set_window_attribute = ct.windll.dwmapi.DwmSetWindowAttribute
+    get_parent = ct.windll.user32.GetParent
+    hwnd = get_parent(window.winfo_id())
+    value = 2
+    value = ct.c_int(value)
+    set_window_attribute(hwnd, 20, ct.byref(value),
+                         4)
 
 POPUP_COUNT = 0
 
@@ -15,13 +31,14 @@ class TimerWindow:
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
         x = int(res_width - 210)
-        y = int(res_height - 250)
-        self.root.geometry(f"180x180+{x}+{y}")
+        y = int(res_height - 215)
+        self.root.geometry(f"180x135+{x}+{y}")
+        dark_title_bar(self.root)
         self.style = Style(theme="cyborg")
         #self.style.theme_use()
 
         self.style.configure('Link.TButton', font=('Arial', 12))
-        self.style.configure('Action.TButton', font=('Arial', 8), background="black", borderwidth=0)
+        self.style.configure('Action.TButton', font=('Arial', 8), background="#060606", borderwidth=0)
         #self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
 
@@ -33,17 +50,11 @@ class TimerWindow:
         self.control_panel = ttk.Frame(self.root)
         self.control_panel.pack(anchor="ne", padx=1, pady=1)
 
-        self.close_button = ttk.Button(self.control_panel, text="X", command=self.exit_app, bootstyle="danger-link")
-        self.close_button.pack(side="right", padx=1)
-
-        self.minimize_button = ttk.Button(self.control_panel, text="—", command=self.min_app, bootstyle="link")
-        self.minimize_button.pack(side="right", padx=5)
-
-        #self.redirectToHomeButton = ttk.Button(self.control_panel, text="Home Window", command=self.redirect_to_home_button, bootstyle="Action.TButton")
-        #self.redirectToHomeButton.pack(side="right", padx=2)
+        self.redirectToHomeButton = ttk.Button(self.control_panel, text="Home Window", command=self.redirect_to_home_button, style="Action.TButton")
+        self.redirectToHomeButton.pack(side="right", padx=2)
 
         self.time_frame = ttk.Frame(self.root)
-        self.time_frame.pack(pady=14)
+        self.time_frame.pack(pady=10)
 
         self.button_frame = ttk.Frame(self.root)
         self.button_frame.pack(pady=0)
@@ -80,28 +91,6 @@ class TimerWindow:
 
     def redirect_to_home_button(self):
         self.master.deiconify()
-        self.alpha_val = 1
-        self.root.attributes("-alpha", self.alpha_val)
-        
-        self.update_alpha()
-
-    def update_alpha(self):
-        if self.alpha_val <= 0:
-            self.root.withdraw()
-            return
-
-        if self.alpha_val > 0:
-            self.alpha_val -= 0.1
-            self.root.attributes("-alpha", self.alpha_val)
-            self.root.after(5, self.update_alpha)
-
-
-    def exit_app(self):
-        self.master.destroy()
-
-    def min_app(self):
-        self.root.overrideredirect(False)
-        self.root.iconify()
 
     def show_picker(self, button, values, on_select):
         global POPUP_COUNT

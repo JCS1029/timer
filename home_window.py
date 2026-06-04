@@ -9,6 +9,7 @@ HOME_WINDOW_HEIGHT = 500
 
 class HomeWindow:
     def __init__(self):
+        self.timer_app = None
         self.master = tk.Tk()
         self.master.title("Home Window")
         res_width = self.master.winfo_screenwidth()
@@ -29,8 +30,9 @@ class HomeWindow:
 
     def redirect_to_timer_button(self):
         self.master.iconify()
-        app1 = TimerWindow(self.master)
-        app1.root.deiconify()
+        if self.timer_app is None or not self.timer_app.root.winfo_exists():
+            self.timer_app = TimerWindow(self.master)
+        self.timer_app.root.deiconify()
 
 
     def main(self):
