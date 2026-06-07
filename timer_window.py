@@ -1,6 +1,7 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap import Style
+import playsound
 import ctypes as ct
 
 
@@ -19,6 +20,7 @@ def dark_title_bar(window):
                          4)
 
 POPUP_COUNT = 0
+CYBORG_BACKGROUND_COLOR = "#060606"
 
 class TimerWindow:
     def __init__(self, master):
@@ -31,14 +33,14 @@ class TimerWindow:
         res_width = self.root.winfo_screenwidth()
         res_height = self.root.winfo_screenheight()
         x = int(res_width - 210)
-        y = int(res_height - 215)
+        y = int(res_height - 225)
         self.root.geometry(f"180x135+{x}+{y}")
         dark_title_bar(self.root)
         self.style = Style(theme="cyborg")
         #self.style.theme_use()
 
         self.style.configure('Link.TButton', font=('Arial', 12))
-        self.style.configure('Action.TButton', font=('Arial', 8), background="#060606", borderwidth=0)
+        self.style.configure('Action.TButton', font=('Arial', 8), background=CYBORG_BACKGROUND_COLOR, borderwidth=0)
         #self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
 
@@ -200,6 +202,7 @@ class TimerWindow:
             self.root.after(1000, self.countdown)
 
         else:
+            playsound.playsound("quack.mp3")
             self.running = False
 
     def stop_timer(self):
