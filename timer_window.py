@@ -4,6 +4,8 @@ from ttkbootstrap import Style
 import playsound
 import ctypes as ct
 
+from ttkbootstrap.style import Y
+
 
 def dark_title_bar(window):
     """
@@ -21,6 +23,10 @@ def dark_title_bar(window):
 
 POPUP_COUNT = 0
 CYBORG_BACKGROUND_COLOR = "#060606"
+MODE_STATE = 0
+SESSION_TIME = 0
+BREAK_TIME = 0
+TEMP = 0
 
 class TimerWindow:
     def __init__(self, master):
@@ -50,10 +56,13 @@ class TimerWindow:
         #))
 
         self.control_panel = ttk.Frame(self.root)
-        self.control_panel.pack(anchor="ne", padx=1, pady=1)
+        self.control_panel.pack(anchor="ne", fill="x", padx=1, pady=1)
 
         self.redirectToHomeButton = ttk.Button(self.control_panel, text="Home Window", command=self.redirect_to_home_button, style="Action.TButton")
         self.redirectToHomeButton.pack(side="right", padx=2)
+
+        self.modeButton = ttk.Button(self.control_panel, text="Mode", command=self.choose_mode, style="Action.TButton")
+        self.modeButton.pack(side="left", padx=2)
 
         self.time_frame = ttk.Frame(self.root)
         self.time_frame.pack(pady=10)
@@ -94,6 +103,38 @@ class TimerWindow:
     def redirect_to_home_button(self):
         self.master.deiconify()
 
+    def choose_mode(self):
+        values = ["50:10", "25:5", "Custom", "None"]
+        self.show_picker(self.modeButton, values, self.mode_update)
+
+    def mode_update(self, value):
+        global SESSION_TIME
+        global BREAK_TIME
+        global TEMP
+        self.modeButton.configure(text=value)
+        global MODE_STATE
+        MODE_STATE = 1
+        if value == "50:10":
+            self.minutes_var.set("50")
+            self.minutes_button.configure(text="50")
+            SESSION_TIME = "50"
+            BREAK_TIME = "10"
+
+        elif value == "25:5":
+            self.minutes_var.set("25")
+            self.minutes_button.configure(text="25")
+            SESSION_TIME = "25"
+            BREAK_TIME = "5"
+
+        elif value == "None":
+            MODE_STATE = 0
+            self.minutes_var.set("00")
+            self.minutes_button.configure(text="00")
+            SESSION_TIME = "0"
+            BREAK_TIME = "0"
+
+        TEMP = SESSION_TIME
+
     def show_picker(self, button, values, on_select):
         global POPUP_COUNT
         POPUP_COUNT += 1
@@ -103,15 +144,17 @@ class TimerWindow:
 
         popup = tk.Toplevel(self.root)
         self._picker = popup
-        #popup.withdraw()
-        #popup.transient(self.root)
         popup.overrideredirect(True)
         popup.attributes("-topmost", True)
 
         x = button.winfo_rootx()
         y = button.winfo_rooty() + button.winfo_height()
-        popup.geometry(f"50x120+{x}+{y}")
 
+        if button != self.modeButton:
+            popup.geometry(f"50x120+{x}+{y}")
+
+        else:
+            popup.geometry(f"75x75+{x}+{y}")
 
         frame = ttk.Frame(popup)
         frame.pack(fill="both", expand=True)
@@ -125,13 +168,6 @@ class TimerWindow:
 
         for value in values:
             listbox.insert("end", value)
-
-        #popup.update_idletasks()
-
-
-        #popup.deiconify()
-        #popup.lift()
-        #listbox.focus_set()
 
         def on_pick(event):
             global POPUP_COUNT
@@ -185,6 +221,10 @@ class TimerWindow:
 
 
     def countdown(self):
+        global MODE_STATE
+        global SESSION_TIME
+        global BREAK_TIME
+        global TEMP
         if not getattr(self, 'running', False): 
             return
 
@@ -203,7 +243,39 @@ class TimerWindow:
 
         else:
             playsound.playsound("quack.mp3")
-            self.running = False
+
+            if MODE_STATE == 0:
+                self.running = False
+                self.hours_var.set("00")
+                self.minutes_var.set("00")
+
+                self.hours_button.config(text="00")
+                self.minutes_button.config(text="00")
+
+                self.seconds_var.set("00")
+                self.seconds_button.config(text="00")
+
+            else: 
+                if TEMP == SESSION_TIME:
+                    self.minutes_var.set(BREAK_TIME)
+                    self.minutes_button.config(text=BREAK_TIME)
+                    TEMP = BREAK_TIME
+                    self.range_val = int(BREAK_TIME) * 60
+                    self.countdown()
+                    self.seconds_var.set("59")
+                    self.seconds_button.config(text="59")
+
+
+                elif TEMP == BREAK_TIME:
+                    self.minutes_var.set(SESSION_TIME)
+                    self.minutes_button.config(text=SESSION_TIME)
+                    TEMP = SESSION_TIME
+                    self.range_val = int(SESSION_TIME) * 60
+                    self.countdown()
+                    self.seconds_var.set("59")
+                    self.seconds_button.config(text="59")
+            
+            
 
     def stop_timer(self):
         self.running = False
