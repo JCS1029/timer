@@ -1,10 +1,11 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap import Style
-import playsound
+from pathlib import Path
+from playsound3 import playsound
 import ctypes as ct
 
-from ttkbootstrap.style import Y
+QUACK_MP3 = Path(__file__).resolve().parent / "quack.mp3"
 
 
 def dark_title_bar(window):
@@ -30,10 +31,6 @@ TEMP = 0
 
 class TimerWindow:
     def __init__(self, master):
-        #self.master = tk.Tk()
-        #self.master.title("Timer")
-        #self.master.attributes("-alpha", 0.0)
-
         self.master = master
         self.root = tk.Toplevel(self.master)
         res_width = self.root.winfo_screenwidth()
@@ -43,17 +40,10 @@ class TimerWindow:
         self.root.geometry(f"180x135+{x}+{y}")
         dark_title_bar(self.root)
         self.style = Style(theme="cyborg")
-        #self.style.theme_use()
 
         self.style.configure('Link.TButton', font=('Arial', 12))
         self.style.configure('Action.TButton', font=('Arial', 8), background=CYBORG_BACKGROUND_COLOR, borderwidth=0)
-        #self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
-
-        #self.master.bind("<Unmap>", lambda e: self.root.withdraw())   # Hide child if master minimizes
-        #self.root.bind("<Map>", lambda e: self.root.after_idle(
-            #lambda: self.root.winfo_exists() and self.root.overrideredirect(True)
-        #))
 
         self.control_panel = ttk.Frame(self.root)
         self.control_panel.pack(anchor="ne", fill="x", padx=1, pady=1)
