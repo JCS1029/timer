@@ -232,8 +232,10 @@ class TimerWindow:
             self.root.after(1000, self.countdown)
 
         else:
-            playsound.playsound("quack.mp3")
-
+            #import threading
+            #playquack = threading.Thread(target=playsound,args=("quack.mp3",))
+            playsound("quack.mp3")
+            #playquack.start()
             if MODE_STATE == 0:
                 self.running = False
                 self.hours_var.set("00")
