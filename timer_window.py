@@ -152,7 +152,7 @@ class TimerWindow:
         scrollbar = ttk.Scrollbar(frame, orient="vertical")
         scrollbar.pack(side="right", fill="y")
         
-        listbox = tk.Listbox(frame, height=10, width=5, yscrollcommand=scrollbar.set)
+        listbox = ttk.Listbox(frame, height=10, width=5, yscrollcommand=scrollbar.set)
         listbox.pack(side="left", fill="both", expand=True)
         scrollbar.configure(command=listbox.yview)
 

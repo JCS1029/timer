@@ -26,7 +26,7 @@ class HomeWindow:
         self.header.pack(anchor="nw", pady=10)
 
         self.redirectToTimerButton = ttk.Button(self.header, 
-        text="Timer Window ->", command=self.redirect_to_timer_button)
+        text="Timer Window", command=self.redirect_to_timer_button)
         self.redirectToTimerButton.pack(side="left", padx=10)
 
         self.customMode = ttk.Button(self.header, text="Custom Mode", 

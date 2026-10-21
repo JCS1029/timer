@@ -1,46 +1,184 @@
+import json
+from pathlib import Path
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap import Style
 
+MODES_FILE = Path(__file__).resolve().parent / "modes.json"
+
+DEFAULT_MODES = [
+    {"name": "50:10", "session": "50", "break": "10", "count": ""},
+    {"name": "25:5", "session": "25", "break": "5", "count": ""},
+]
+
+REMOVE_TRIGGER = 0
+
+def write_default_modes():
+    with MODES_FILE.open("w", encoding="utf-8") as file:
+        json.dump(DEFAULT_MODES, file, indent=2)
+
 class CustomMode(tk.Frame):
     def __init__(self, master, on_back=None):
         tk.Frame.__init__(self, master)
+        self.on_back = on_back
 
-        self.style = Style()        
+        self.style = Style(theme="cyborg")        
         self.style.configure('LabelStyle.TLabel', font=('Arial', 12))
 
-        self.header = tk.Frame(self)
-        self.header.pack(fill="x", anchor="n", pady=5)
+        self.header = ttk.Frame(self)
+        self.header.pack(fill="x", anchor="n", padx=20, pady=5)
 
-        self.titleLabel = tk.Label(self.header, text="Custom mode", font=('Arial', 32))
+        self.titleLabel = ttk.Label(self.header, text="Custom mode", font=('Arial', 32))
         self.titleLabel.pack(side="top")
 
-        self.options = tk.Frame(self)
-        self.options.pack(fill="x", pady=30)
+        self.redirectToHomeButton = ttk.Button(self.header, text="Home Window", command=self.redirect_to_home_button, style="Action.TButton")
+        self.redirectToHomeButton.pack(side="left", padx=2)
 
-        self.frame = tk.Frame(self)
-        self.frame.pack(fill="x", pady=15)
+        self.modeViewport = tk.Frame(self, height=1, bg=self.style.colors.bg, highlightthickness=0)
+        self.modeViewport.pack_propagate(False)
+        self.modeViewport.pack(fill="x", padx=40)
 
-        self.modeName = ttk.Label(self.frame, text="Mode Name", style="LabelStyle.TLabel")
-        self.modeName.grid(row=0, column=0, padx=(60, 20))
+        self.modeList = ttk.ScrolledFrame(self.modeViewport)
+        self.modeList.pack(fill="both", expand=True)
+        # Leave would turn wheel scrolling off as soon as the pointer hits a label or entry.
+        self.modeList.container.unbind("<Leave>")
+        self.modeList.enable_scrolling()
+        self._fitting = False
 
-        self.modeNameInput = tk.Entry(self.frame)
-        self.modeNameInput.grid(row=1, column=0, padx=(60, 20), pady=15)
-        
-        self.sessionTime = ttk.Label(self.frame, text="Session Duration", style="LabelStyle.TLabel")
-        self.sessionTime.grid(row=0, column=1, padx=20)
+        self.modeForms = []
 
-        self.sessionTimeInput = tk.Entry(self.frame)
-        self.sessionTimeInput.grid(row=1, column=1, padx=20, pady=15)
-        
-        self.breakTime = ttk.Label(self.frame, text="Break Duration", style="LabelStyle.TLabel")
-        self.breakTime.grid(row=0, column=2, padx=20)
+        self.buttonRow = ttk.Frame(self)
+        self.buttonRow.pack(pady=10)
 
-        self.breakTimeInput = tk.Entry(self.frame)
-        self.breakTimeInput.grid(row=1, column=2, padx=20, pady=15)
+        self.addModeButton = ttk.Button(self.buttonRow, text="Add Mode", command=self.add_mode, style="Action.TButton")
+        self.addModeButton.pack(side="left", padx=(0,10))
 
-        self.sessionCount = ttk.Label(self.frame, text="Number of sessions", style="LabelStyle.TLabel")
-        self.sessionCount.grid(row=0, column=3, padx=(20, 60))
+        self.deleteButton = ttk.Button(self.buttonRow, text="Remove Mode", command=self.delete_mode, style="Action.TButton")
+        self.deleteButton.pack(side="left", padx=(0,10))
 
-        self.sessionCountInput = tk.Entry(self.frame)
-        self.sessionCountInput.grid(row=1, column=3, padx=(20, 60), pady=15)
+        self.saveButton = ttk.Button(self.buttonRow, text="Save Changes", command=self.save_mode_changes, style="Action.TButton")
+        self.saveButton.pack(side="left")
+
+        self.bind("<Configure>", self.fit_mode_list)
+
+        self.load_modes()
+
+    def redirect_to_home_button(self):
+        if self.on_back is not None:
+            self.on_back()
+
+    def fit_mode_list(self, event=None):
+        if self._fitting:
+            return
+        if event is not None and event.widget is not self:
+            return
+        self._fitting = True
+        try:
+            self.update_idletasks()
+            content_height = self.modeList.winfo_reqheight()
+            available = (
+                self.winfo_height()
+                - self.header.winfo_reqheight()
+                - self.buttonRow.winfo_reqheight()
+                - 30
+            )
+            if available < 1:
+                height = content_height
+            else:
+                height = min(content_height, available)
+            height = max(int(height), 1)
+            if int(self.modeViewport.cget("height")) != height:
+                self.modeViewport.configure(height=height)
+        finally:
+            self._fitting = False
+
+    def add_mode(self):
+        row = ttk.Frame(self.modeList)
+        row.pack(fill="x", pady=10)
+
+        mode = ttk.Frame(row)
+        mode.pack(side="left", fill="x",expand=True)
+
+        removeButton = ttk.Button(row, text="X")
+
+        for column in range(4):
+            mode.columnconfigure(column, weight=1, uniform="fields")
+
+        nameLabel = ttk.Label(mode, text="Mode Name", style="LabelStyle.TLabel")
+        nameLabel.grid(row=0, column=0, padx=20, pady=5)
+        nameInput = ttk.Entry(mode)
+        nameInput.grid(row=1, column=0, padx=20)
+
+        sessionLabel = ttk.Label(mode, text="Session Duration", style="LabelStyle.TLabel")
+        sessionLabel.grid(row=0, column=1, padx=20)
+        sessionInput = ttk.Entry(mode)
+        sessionInput.grid(row=1, column=1, padx=20)
+
+        breakLabel = ttk.Label(mode, text="Break Duration", style="LabelStyle.TLabel")
+        breakLabel.grid(row=0, column=2, padx=20)
+        breakInput = ttk.Entry(mode)
+        breakInput.grid(row=1, column=2, padx=20)
+
+        countLabel = ttk.Label(mode, text="Number of Sessions", style="LabelStyle.TLabel")
+        countLabel.grid(row=0, column=3, padx=20)
+        countInput = ttk.Entry(mode)
+        countInput.grid(row=1, column=3, padx=20)
+
+        self.modeForms.append({
+            "name": nameInput,
+            "session": sessionInput,
+            "break": breakInput,
+            "count": countInput,
+            "mode": mode,
+            "row": row,
+            "removeButton": removeButton,
+        })
+        self.modeList.enable_scrolling()
+        self.fit_mode_list()
+
+    def delete_mode(self):
+        global REMOVE_TRIGGER
+        if REMOVE_TRIGGER == 0:
+            for form in self.modeForms:
+                button = form["removeButton"]
+                button.pack(side="left", before=form["mode"], anchor="s")
+                button.configure(command=lambda form=form: self.remove_form(form))
+            REMOVE_TRIGGER = 1
+        else:
+            for form in self.modeForms:
+                button = form["removeButton"]
+                button.pack_forget()
+            REMOVE_TRIGGER = 0
+
+    def remove_form(self, form):
+        form["row"].destroy()
+        self.modeForms.remove(form)
+        self.fit_mode_list()
+        self.save_mode_changes()
+
+    def save_mode_changes(self):
+        modes = []
+        for form in self.modeForms:
+            modes.append({
+                "name": form["name"].get(),
+                "session": form["session"].get(),
+                "break": form["break"].get(),
+                "count": form["count"].get(),
+            })
+        with MODES_FILE.open("w", encoding="utf-8") as file:
+            json.dump(modes, file, indent=2)
+
+    def load_modes(self):
+            if not MODES_FILE.exists():
+                write_default_modes()
+            with MODES_FILE.open(encoding="utf-8") as file:
+                modes = json.load(file)
+            for mode in modes:
+                self.add_mode()
+                form = self.modeForms[-1]
+                form["removeButton"].configure(command=lambda form=form: self.remove_form(form))
+                form["name"].insert(0, mode["name"])
+                form["session"].insert(0, mode["session"])
+                form["break"].insert(0, mode["break"])
+                form["count"].insert(0, mode["count"])
+
