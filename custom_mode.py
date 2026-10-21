@@ -13,6 +13,67 @@ DEFAULT_MODES = [
 
 REMOVE_TRIGGER = 0
 
+def duration_parts(value):
+    text = str(value).strip()
+    if text == "":
+        return 0, 0, 0
+    numbers = [int(float(piece)) if piece else 0 for piece in text.split(":")]
+    if len(numbers) == 1:
+        hours, minutes = divmod(numbers[0], 60)
+        return hours, minutes, 0
+    if len(numbers) == 2:
+        return numbers[0], numbers[1], 0
+    return numbers[0], numbers[1], numbers[2]
+
+
+class DurationEntry(ttk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.parts = []
+        check = self.register(self._digits)
+        for index, (caption, limit) in enumerate((("H", 99), ("M", 59), ("S", 59))):
+            column = index * 2
+            ttk.Label(self, text=caption).grid(row=0, column=column)
+            entry = ttk.Entry(
+                self, width=2, justify="center", validate="key",
+                validatecommand=(check, "%P"),
+            )
+            entry.grid(row=1, column=column, padx=1)
+            entry.bind("<FocusOut>", lambda event, entry=entry, limit=limit: self._clamp(entry, limit))
+            self.parts.append((entry, limit))
+            if index < 2:
+                ttk.Label(self, text=":").grid(row=1, column=column + 1)
+        self.set_time(0, 0, 0)
+
+    def _digits(self, proposed):
+        return proposed == "" or (proposed.isdigit() and len(proposed) <= 2)
+
+    def _clamp(self, entry, limit):
+        number = min(self._read(entry), limit)
+        entry.delete(0, "end")
+        entry.insert(0, f"{number:02d}")
+
+    def _read(self, entry):
+        text = entry.get().strip()
+        if text == "":
+            return 0
+        return int(text)
+
+    def get(self):
+        hours, minutes, seconds = (
+            min(self._read(entry), limit) for entry, limit in self.parts
+        )
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+    def set_time(self, hours, minutes, seconds):
+        for (entry, limit), number in zip(self.parts, (hours, minutes, seconds)):
+            number = min(max(int(number), 0), limit)
+            entry.delete(0, "end")
+            entry.insert(0, f"{number:02d}")
+
+    def insert(self, index, value):
+        self.set_time(*duration_parts(value))
+
 def write_default_modes():
     with MODES_FILE.open("w", encoding="utf-8") as file:
         json.dump(DEFAULT_MODES, file, indent=2)
@@ -107,22 +168,22 @@ class CustomMode(tk.Frame):
         nameLabel = ttk.Label(mode, text="Mode Name", style="LabelStyle.TLabel")
         nameLabel.grid(row=0, column=0, padx=20, pady=5)
         nameInput = ttk.Entry(mode)
-        nameInput.grid(row=1, column=0, padx=20)
+        nameInput.grid(row=1, column=0, padx=20, sticky="s")
 
         sessionLabel = ttk.Label(mode, text="Session Duration", style="LabelStyle.TLabel")
         sessionLabel.grid(row=0, column=1, padx=20)
-        sessionInput = ttk.Entry(mode)
-        sessionInput.grid(row=1, column=1, padx=20)
+        sessionInput = DurationEntry(mode)
+        sessionInput.grid(row=1, column=1, padx=20, sticky="s")
 
         breakLabel = ttk.Label(mode, text="Break Duration", style="LabelStyle.TLabel")
         breakLabel.grid(row=0, column=2, padx=20)
-        breakInput = ttk.Entry(mode)
-        breakInput.grid(row=1, column=2, padx=20)
+        breakInput = DurationEntry(mode)
+        breakInput.grid(row=1, column=2, padx=20, sticky="s")
 
         countLabel = ttk.Label(mode, text="Number of Sessions", style="LabelStyle.TLabel")
         countLabel.grid(row=0, column=3, padx=20)
         countInput = ttk.Entry(mode)
-        countInput.grid(row=1, column=3, padx=20)
+        countInput.grid(row=1, column=3, padx=20, sticky="s")
 
         self.modeForms.append({
             "name": nameInput,

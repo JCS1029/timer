@@ -1,11 +1,19 @@
+import json
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap import Style
 from pathlib import Path
 from playsound3 import playsound
 import ctypes as ct
+from custom_mode import duration_parts
 
 QUACK_MP3 = Path(__file__).resolve().parent / "quack.mp3"
+MODES_FILE = Path(__file__).resolve().parent / "modes.json"
+
+
+def duration_seconds(value):
+    hours, minutes, seconds = duration_parts(value)
+    return hours * 3600 + minutes * 60 + seconds
 
 
 def dark_title_bar(window):
@@ -27,6 +35,7 @@ CYBORG_BACKGROUND_COLOR = "#060606"
 MODE_STATE = 0
 SESSION_TIME = 0
 BREAK_TIME = 0
+SESSION_COUNT = 0
 TEMP = 0
 
 class TimerWindow:
@@ -93,37 +102,47 @@ class TimerWindow:
     def redirect_to_home_button(self):
         self.master.deiconify()
 
+    def saved_modes(self):
+        if not MODES_FILE.exists():
+            return []
+        with MODES_FILE.open(encoding="utf-8") as file:
+            return json.load(file)
+
     def choose_mode(self):
-        values = ["50:10", "25:5", "Custom", "None"]
+        modes = [mode for mode in self.saved_modes() if mode.get("name")]
+        self._modes_by_name = {mode["name"]: mode for mode in modes}
+        values = [mode["name"] for mode in modes] + ["None"]
         self.show_picker(self.modeButton, values, self.mode_update)
 
     def mode_update(self, value):
         global SESSION_TIME
         global BREAK_TIME
+        global SESSION_COUNT
         global TEMP
         self.modeButton.configure(text=value)
         global MODE_STATE
         MODE_STATE = 1
-        if value == "50:10":
-            self.minutes_var.set("50")
-            self.minutes_button.configure(text="50")
-            SESSION_TIME = "50"
-            BREAK_TIME = "10"
-
-        elif value == "25:5":
-            self.minutes_var.set("25")
-            self.minutes_button.configure(text="25")
-            SESSION_TIME = "25"
-            BREAK_TIME = "5"
+        saved = getattr(self, "_modes_by_name", {}).get(value)
+        if saved is not None:
+            session = str(saved["session"])
+            break_time = str(saved["break"])
+            session_count = str(saved["count"])
+            self.show_duration(session)
+            SESSION_TIME = session
+            BREAK_TIME = break_time
+            if session_count == "":
+                SESSION_COUNT = "-1"
+            else:
+                SESSION_COUNT = session_count
 
         elif value == "None":
             MODE_STATE = 0
-            self.minutes_var.set("00")
-            self.minutes_button.configure(text="00")
+            self.show_duration("0")
             SESSION_TIME = "0"
             BREAK_TIME = "0"
+            SESSION_COUNT = "1"
 
-        TEMP = SESSION_TIME
+        TEMP = "session"
 
     def show_picker(self, button, values, on_select):
         global POPUP_COUNT
@@ -195,6 +214,15 @@ class TimerWindow:
         self.seconds_var.set(value)
         self.seconds_button.configure(text=value)
 
+    def show_duration(self, value):
+        hours, minutes, seconds = duration_parts(value)
+        self.hours_var.set(f"{hours:02d}")
+        self.minutes_var.set(f"{minutes:02d}")
+        self.seconds_var.set(f"{seconds:02d}")
+        self.hours_button.config(text=f"{hours:02d}")
+        self.minutes_button.config(text=f"{minutes:02d}")
+        self.seconds_button.config(text=f"{seconds:02d}")
+
     def start_timer(self):
         if getattr(self, 'running', False): 
             return
@@ -214,6 +242,7 @@ class TimerWindow:
         global MODE_STATE
         global SESSION_TIME
         global BREAK_TIME
+        global SESSION_COUNT
         global TEMP
         if not getattr(self, 'running', False): 
             return
@@ -236,7 +265,7 @@ class TimerWindow:
             #playquack = threading.Thread(target=playsound,args=("quack.mp3",))
             playsound("quack.mp3")
             #playquack.start()
-            if MODE_STATE == 0:
+            def set_time_zero():
                 self.running = False
                 self.hours_var.set("00")
                 self.minutes_var.set("00")
@@ -247,25 +276,28 @@ class TimerWindow:
                 self.seconds_var.set("00")
                 self.seconds_button.config(text="00")
 
+            if MODE_STATE == 0:
+                set_time_zero()
+
             else: 
-                if TEMP == SESSION_TIME:
-                    self.minutes_var.set(BREAK_TIME)
-                    self.minutes_button.config(text=BREAK_TIME)
-                    TEMP = BREAK_TIME
-                    self.range_val = int(BREAK_TIME) * 60
-                    self.countdown()
-                    self.seconds_var.set("59")
-                    self.seconds_button.config(text="59")
+                if TEMP == "session":
+                    unlimited = SESSION_COUNT == "" or SESSION_COUNT == "-1"
+                    if not unlimited:
+                        SESSION_COUNT = str(int(SESSION_COUNT) - 1)
+                    if unlimited or int(SESSION_COUNT) > 0:
+                        self.show_duration(BREAK_TIME)
+                        TEMP = "break"
+                        self.range_val = duration_seconds(BREAK_TIME)
+                        self.countdown()
+                    else:
+                        set_time_zero()
 
 
-                elif TEMP == BREAK_TIME:
-                    self.minutes_var.set(SESSION_TIME)
-                    self.minutes_button.config(text=SESSION_TIME)
-                    TEMP = SESSION_TIME
-                    self.range_val = int(SESSION_TIME) * 60
+                elif TEMP == "break":
+                    self.show_duration(SESSION_TIME)
+                    TEMP = "session"
+                    self.range_val = duration_seconds(SESSION_TIME)
                     self.countdown()
-                    self.seconds_var.set("59")
-                    self.seconds_button.config(text="59")
             
             
 
